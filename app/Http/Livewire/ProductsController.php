@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\Product;
 use Intervention\Image\Facades\Image;
 
+
 class ProductsController extends Component
 {
 
@@ -18,6 +19,7 @@ class ProductsController extends Component
     public $name,$barcode,$brand,$model,$size,$color,$description,$cost,$price,$stock,
     $min_stock,$categoryid,$image,$search,$selected_id,$pageTitle,$componentName,$is_weighted, $price_per_kg;
     private $pagination = 10;
+    public $selectedCategory = 0;
 
     //para ver el estado de la paginacion personalizada
     public function paginationView()
@@ -35,31 +37,34 @@ class ProductsController extends Component
 
     public function render()
     {
+        $query = Product::join('categories as c', 'c.id', 'products.category_id')
+            ->select('products.*', 'c.name as category')
+            ->orderBy('products.id', 'DESC');
+    
         if (strlen($this->search) > 0) {
-            // Para buscar por nombre o código de barras
-            $products = Product::join('categories as c', 'c.id', 'products.category_id')
-                ->select('products.*', 'c.name as category')
-                ->where('products.name', 'like', '%' . $this->search . '%')
-                ->orWhere('products.barcode', 'like', '%' . $this->search . '%')
-                ->orWhere('products.model', 'like', '%' . $this->search . '%')
-                ->orWhere('products.brand', 'like', '%' . $this->search . '%')
-                ->orWhere('products.description', 'like', '%' . $this->search . '%')
-                ->orderBy('products.id', 'DESC')
-                ->paginate($this->pagination);
-        } else {
-            $products = Product::join('categories as c', 'c.id', 'products.category_id')
-                ->select('products.*', 'c.name as category')
-                ->orderBy('products.id', 'DESC')
-                ->paginate($this->pagination);
+            $query->where(function ($q) {
+                $q->where('products.name', 'like', '%' . $this->search . '%')
+                  ->orWhere('products.barcode', 'like', '%' . $this->search . '%')
+                  ->orWhere('products.model', 'like', '%' . $this->search . '%')
+                  ->orWhere('products.brand', 'like', '%' . $this->search . '%')
+                  ->orWhere('products.description', 'like', '%' . $this->search . '%');
+            });
         }
-
+    
+        if ($this->selectedCategory > 0) {
+            $query->where('products.category_id', $this->selectedCategory);
+        }
+    
+        $products = $query->paginate($this->pagination);
+    
         return view('livewire.products.component', [
             'data' => $products,
             'categories' => Category::orderBy('name', 'ASC')->get()
         ])
-            ->extends('layouts.theme.app')
-            ->section('content');
+        ->extends('layouts.theme.app')
+        ->section('content');
     }
+    
 
 protected    $rules = [
         'name' => 'required|min:3',
@@ -377,6 +382,7 @@ protected    $rules = [
         $this->image = null;
         $this->is_weighted = false; // Nuevo campo
         $this->selected_id = 0;
+        $this->selectedCategory = 0;
         $this->resetValidation();
     }
 

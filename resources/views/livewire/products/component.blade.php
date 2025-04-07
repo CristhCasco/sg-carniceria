@@ -14,9 +14,27 @@
 					@endcan
 				</ul>
 			</div>
+
+			
 			@can('Product_Search')
-			@include('common.searchbox')
+				<div class="row mb-2">
+					<div class="col-md-6">
+						<input wire:model="search" type="text" class="form-control" placeholder="Buscar productos...">
+					</div>
+					<div class="col-md-6">
+						<select wire:model="selectedCategory" class="form-control">
+							<option value="0">Todas las Categorías</option>
+							@foreach($categories as $category)
+								<option value="{{ $category->id }}">{{ $category->name }}</option>
+							@endforeach
+						</select>
+					</div>
+				</div>
 			@endcan
+
+
+
+
 			<div class="widget-content">
 				
 				<div class="table-responsive">
